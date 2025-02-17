@@ -7,44 +7,63 @@
 
 import SwiftUI
 
-struct Tile : Equatable, Identifiable{
+struct Tile: Equatable, Identifiable {
     var id = UUID()
     let emoji: String
+    let matchID: Int
     
     static let testTiles: [Tile] = [
-        Tile(emoji: "😂"),
-        Tile(emoji: "😭"),
-        Tile(emoji: "💩"),
-        Tile(emoji: "😡"),
-        Tile(emoji: "🥶"),
-        Tile(emoji: "🤢"),
-        Tile(emoji: "🍑"),
-        Tile(emoji: "🙌🏽"),
-        Tile(emoji: "🧐")
+        Tile(emoji: "😂", matchID: 0),
+        Tile(emoji: "😭", matchID: 1),
+        Tile(emoji: "💩", matchID: 2),
+        Tile(emoji: "😡", matchID: 3),
+        Tile(emoji: "🥶", matchID: 4),
+        Tile(emoji: "🤢", matchID: 5),
+        Tile(emoji: "🍑", matchID: 6),
+        Tile(emoji: "🙌🏽", matchID: 7),
+        Tile(emoji: "🧐", matchID: 8),
+        Tile(emoji: "🥱", matchID: 9)
     ]
 }
 
 struct TileView: View {
     let tile: Tile
-    @State private var isFlipped = false
+    @ObservedObject var gameLogic: GameLogic
+    var onTileTapped: (Tile) -> Void
     
     var body: some View {
-        ZStack{
+        let isFlipped = gameLogic.isFlipped(tile.id)
+        let isMatched = gameLogic.isMatched(tile.id)
+        
+        ZStack {
             RoundedRectangle(cornerRadius: 20)
-                .fill(isFlipped ? Color.blue.gradient : Color.white.gradient)
-                .border(isFlipped ? .clear : .blue, width: 2)
+                .fill(isMatched ? Color.green.gradient :
+                        isFlipped ? Color.white.gradient : Color.blue.gradient)
+                .border(isFlipped ? .blue : isMatched ? .green :.clear, width: 2)
             
-            Text(isFlipped ? "" : tile.emoji)
+            Text(isFlipped || isMatched ? tile.emoji : "")
                 .font(.largeTitle)
-            
+            .rotation3DEffect(
+                        .degrees(isFlipped || isMatched ? 180 : 0),
+                        axis: (x: 0.0, y: 1.0, z: 0.0)
+                    )
         }
-        .frame(width: 120 , height: 150)
+        .frame(width: 120, height: 150)
+        .rotation3DEffect(
+                    .degrees(isFlipped || isMatched ? 180 : 0),
+                    axis: (x: 0.0, y: 1.0, z: 0.0)
+                )
+        .animation(.easeInOut(duration: 0.5), value: isFlipped)
+        .animation(.easeInOut(duration: 0.5), value: isMatched)
         .onTapGesture {
-            isFlipped.toggle()
+            if !isMatched && !isFlipped {
+                withAnimation{
+                    onTileTapped(tile)
+                }
+            }
         }
     }
 }
 
 #Preview {
-    TileView(tile: Tile(emoji: "🧐"))
 }
